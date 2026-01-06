@@ -1,134 +1,173 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
 const App = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTestOpen, setIsTestOpen] = useState(false);
+  const [testStep, setTestStep] = useState(0);
+  const [testScore, setTestScore] = useState(0);
+
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
   }, []);
 
+  // Test savollari
+  const questions = [
+    { q: "Harakatlanganda bo'g'imlarda qirsillash seziladimi?", p: 2 },
+    { q: "Ertalab turganda bo'g'imlarda qotib qolish bormi?", p: 3 },
+    { q: "Ob-havo o'zgarganda bo'g'imlar simillab og'riydimi?", p: 2 },
+    { q: "Zinadan ko'tarilganda tizzalarda og'riq bo'ladimi?", p: 3 }
+  ];
+
+  const handleTest = (ans) => {
+    if (ans) setTestScore(testScore + questions[testStep].p);
+    if (testStep < questions.length - 1) setTestStep(testStep + 1);
+    else setTestStep(99); // Yakunlash
+  };
+
   return (
     <div className="site-wrapper">
       <style>{`
-        /* 1. ОБЩИЕ СТИЛИ */
+        /* 1. UMUMIY STILLAR */
         html, body {
           margin: 0; padding: 0;
           overflow-x: hidden;
-          background-color: #f0f8ff;
+          background-color: #f0f4ed; /* Mox-yashil fon */
           font-family: 'Segoe UI', Tahoma, sans-serif;
-          color: #1a4f8b;
+          color: #283618;
+          scroll-behavior: smooth;
         }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 
-        /* 2. HEADER (ДВУХУРОВНЕВЫЙ) */
-        .header-main { padding: 25px 0 15px; }
-        
-        .header-top-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 25px;
-        }
+        /* 2. HEADER */
+        .header-main { padding: 25px 0 15px; background: white; }
+        .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .logo { font-size: 34px; font-weight: 900; font-style: italic; text-decoration: none; }
-        .logo .blue { color: #00aeef; }
-        .logo .dark { color: #1a4f8b; }
+        .logo .green { color: #606c38; }
+        .logo .dark { color: #283618; }
 
+        .btn-group { display: flex; gap: 10px; }
+        .btn-test-trigger {
+          background: #ff9d3d; color: white; padding: 12px 25px;
+          border-radius: 50px; border: none; font-weight: 700; cursor: pointer;
+        }
         .btn-buy-header {
-          background: #00aeef; color: white; padding: 12px 35px;
+          background: #606c38; color: white; padding: 12px 35px;
           border-radius: 50px; text-decoration: none; font-weight: 700;
-          text-transform: uppercase; font-size: 14px;
-          box-shadow: 0 4px 15px rgba(0, 174, 239, 0.2);
+          text-transform: uppercase; font-size: 14px; border: none; cursor: pointer;
         }
 
-        /* ТА САМАЯ ПЛАШКА С ТЕКСТОМ ПО ЦЕНТРУ */
-        .nav-bar-wrapper { display: flex; justify-content: center; width: 100%; }
+        /* NAVIGATSIYA PLASHKASI */
+        .nav-bar-wrapper { display: flex; justify-content: center; width: 100%; margin-top: -25px; position: relative; z-index: 10; }
         .nav-island {
-          background: #ffffff;
-          border-radius: 100px;
-          padding: 16px 50px;
-          display: flex;
-          justify-content: center; /* Текст по центру плашки */
-          gap: 35px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+          background: #ffffff; border-radius: 100px; padding: 16px 50px;
+          display: flex; gap: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         }
-        .nav-island a {
-          text-decoration: none;
-          color: #1a4f8b;
-          font-weight: 600;
-          font-size: 15px;
-          white-space: nowrap;
-          transition: color 0.3s;
-        }
-        .nav-island a:hover { color: #00aeef; }
+        .nav-island a { text-decoration: none; color: #283618; font-weight: 600; font-size: 15px; transition: 0.3s; }
+        .nav-island a:hover { color: #606c38; }
 
-        /* 3. СЕКЦИЯ С ПАЗЛОМ (БЕЗ НАЛОЖЕНИЯ ТЕКСТА) */
-        .puzzle-section { padding: 60px 0; }
-        .puzzle-grid {
-          display: grid;
-          grid-template-columns: 1fr 140px 1fr; /* Фиксированный центр защищает текст */
-          align-items: center;
-          position: relative;
-        }
-        .puzzle-card { background: white; padding: 40px; border-radius: 30px; z-index: 1; }
-        .card-left { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+        /* 3. PUZZLE SECTION */
+        .puzzle-section { padding: 80px 0; }
+        .puzzle-grid { display: grid; grid-template-columns: 1fr 140px 1fr; align-items: center; }
+        .puzzle-card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); }
+        .card-left { border-top-right-radius: 0; border-bottom-right-radius: 0; text-align: right; }
         .card-right { border-top-left-radius: 0; border-bottom-left-radius: 0; }
-        
         .puzzle-center { position: relative; z-index: 5; display: flex; justify-content: center; }
-        .puzzle-img { width: 260px; position: absolute; pointer-events: none; }
+        .puzzle-img { width: 260px; position: absolute; }
 
-        /* 4. ГИМНАСТИКА (ИЗ СКРИНШОТА image_5d3841.png) */
+        /* 4. GIMNASTIKA */
         .gym-section { padding: 60px 0; }
-        .gym-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; }
+        .section-title { text-align: center; margin-bottom: 40px; font-size: 32px; color: #283618; }
+        .gym-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .gym-item { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .gym-img { width: 100%; height: 200px; object-fit: cover; }
-        .gym-label { padding: 15px 20px; font-weight: 800; text-transform: uppercase; color: #1a4f8b; }
+        .gym-img { width: 100%; height: 220px; background: #e0eadd; }
+        .gym-label { padding: 15px 20px; font-weight: 800; text-transform: uppercase; font-size: 14px; }
 
-        /* 5. СТАТЬИ (ИЗ СКРИНШОТА image_5d4ba7.jpg) */
-        .articles-section { padding: 60px 0; background: #fff; }
-        .art-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin: 40px 0; }
-        .art-card { border-radius: 20px; overflow: hidden; background: #00aeef; text-decoration: none; color: white; transition: 0.3s; }
-        .art-card:hover { transform: translateY(-5px); }
-        .art-img { height: 180px; width: 100%; object-fit: cover; background: #ddd; }
+        /* 5. MAQOLALAR */
+        .articles-section { padding: 80px 0; background: #fff; }
+        .art-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+        .art-card { border-radius: 20px; overflow: hidden; background: #606c38; text-decoration: none; color: white; display: block; }
         .art-footer { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .art-title { font-weight: 700; font-size: 15px; margin-right: 10px; }
-        .art-arrow { width: 30px; height: 30px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #00aeef; font-weight: bold; }
+        .art-arrow { width: 30px; height: 30px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #606c38; }
 
-        /* 6. ФУТЕР (ИЗ СКРИНШОТА image_5dad01.jpg и image_5db8ff.png) */
+        /* 6. FOOTER */
         .footer-top { background: white; padding: 60px 0 40px; border-top: 1px solid #eee; }
-        .bad-warning { text-align: center; color: #00aeef; font-size: 32px; font-weight: 800; text-transform: uppercase; margin-bottom: 40px; }
-        .sources-text { font-size: 11px; color: #999; line-height: 1.5; margin-bottom: 40px; }
-        
-        .footer-logo-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 30px; }
-        .footer-dark { background: #1a3a5a; color: #fff; padding: 40px 0; font-size: 12px; }
-        .footer-dark-grid { display: flex; justify-content: space-between; align-items: flex-start; }
+        .bad-warning { text-align: center; color: #606c38; font-size: 28px; font-weight: 800; margin-bottom: 40px; }
+        .footer-dark { background: #283618; color: #fff; padding: 40px 0; font-size: 12px; }
 
-        /* АДАПТИВНОСТЬ 430px */
+        /* MODAL */
+        .modal-overlay {
+          position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(40, 54, 24, 0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content { background: white; padding: 35px; border-radius: 25px; width: 90%; max-width: 400px; text-align: center; }
+        .form-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; }
+
         @media (max-width: 1024px) {
-          .nav-island { gap: 15px; padding: 15px 25px; width: 95%; overflow-x: auto; justify-content: flex-start; }
-          .puzzle-grid { grid-template-columns: 1fr; }
-          .puzzle-center { height: 120px; order: 2; }
-          .puzzle-img { width: 180px; top: -30px; }
-          .card-left { order: 1; border-radius: 30px; margin-bottom: 0; }
-          .card-right { order: 3; border-radius: 30px; margin-top: 0; }
-          .gym-grid, .art-grid { grid-template-columns: 1fr; }
+          .nav-island { display: none; }
+          .puzzle-grid, .gym-grid, .art-grid { grid-template-columns: 1fr; }
+          .puzzle-center { height: 100px; }
         }
       `}</style>
 
+
       {/* FOOTER */}
       <footer className="footer-top">
+        <div className="container">
+          <div className="bad-warning">BIOLOGIK FAOL QO'SHIMCHA. DORI VOSITASI EMAS.</div>
+        </div>
       </footer>
+
       <div className="footer-dark">
-        <div className="container footer-dark-grid">
-          <div>
-            Производитель: Softgel Healthcare Privet Limited, Индия.<br/>
-            СОГР № RU.77.99.11.003.E.008.73 .02.16 от 24.02.2016
-          </div>
-          <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
-            <a href="#" style={{color: '#fff'}}>Пользовательское соглашение</a>
-            <a href="#" style={{color: '#fff'}}>Политика конфиденциальности</a>
+        <div className="container" style={{display: 'flex', justifyContent: 'space-between'}}>
+          <div>Ishlab chiqaruvchi: Softgel Healthcare, Hindiston.<br/>SOGR № RU.77.99.11.003.E.00873.02.16</div>
+          <div style={{display: 'flex', gap: '20px'}}>
+            <a href="#" style={{color: '#fff'}}>Foydalanish shartlari</a>
+            <a href="#" style={{color: '#fff'}}>Maxfiylik siyosati</a>
           </div>
         </div>
       </div>
+
+      {/* TEST MODAL */}
+      {isTestOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            {testStep !== 99 ? (
+              <>
+                <h3>Savol {testStep + 1}/4</h3>
+                <p style={{fontSize: '18px', margin: '20px 0'}}>{questions[testStep].q}</p>
+                <div style={{display: 'flex', gap: '10px'}}>
+                  <button className="btn-buy-header" style={{flex: 1}} onClick={() => handleTest(true)}>HA</button>
+                  <button className="btn-buy-header" style={{flex: 1, background: '#ccc'}} onClick={() => handleTest(false)}>YO'Q</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3>Test Natijasi</h3>
+                <p style={{margin: '20px 0'}}>{testScore > 5 ? "Sizga bo'g'imlarni faol qo'llab-quvvatlash tavsiya etiladi." : "Sizda holat yaxshi, profilaktika yetarli."}</p>
+                <button className="btn-buy-header" onClick={() => setIsTestOpen(false)}>Yopish</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* BUY MODAL */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>Buyurtma berish</h3>
+            <input type="email" placeholder="Gmail manzilingiz" className="form-input" />
+            <input type="tel" placeholder="+998 __ ___ __ __" className="form-input" />
+            <select className="form-input">
+              <option>Visa / MasterCard</option>
+              <option>Humo / UzCard</option>
+            </select>
+            <button className="btn-buy-header" style={{width: '100%', marginTop: '10px'}} onClick={() => setIsModalOpen(false)}>TASDIQLASH</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
